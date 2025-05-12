@@ -11,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final List<TodoItem> _todoItems = [];
-  final TextEditingController _textFieldController = TextEditingController();
+  final TextEditingController _taskController = TextEditingController();
 
   @override
   void initState() {
@@ -26,15 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (savedItems != null) {
       setState(() {
-        _todoItems.addAll(
-            savedItems.map((item) {
-              final parts = item.split('|'); // Split by delimiter
-              return TodoItem(
-                title: parts[0],
-                isCompleted: parts[1] == 'true',
-              );
-            }).toList()
-        );
+        _todoItems.addAll(savedItems.map((item) {
+          final parts = item.split('|'); // Split by delimiter
+          return TodoItem(
+            title: parts[0],
+            isCompleted: parts[1] == 'true',
+          );
+        }).toList());
       });
     }
   }
@@ -42,9 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // Save tasks (without JSON)
   Future<void> _saveTodoItems() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> itemsToSave = _todoItems.map((item) =>
-    '${item.title}|${item.isCompleted}' // Combine with delimiter
-    ).toList();
+    final List<String> itemsToSave = _todoItems
+        .map((item) =>
+                '${item.title}|${item.isCompleted}' // Combine with delimiter
+            )
+        .toList();
     await prefs.setStringList('todo_items', itemsToSave);
   }
 
@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
       _saveTodoItems();
     });
-    _textFieldController.clear();
+    _taskController.clear();
   }
 
   // Toggle completion status
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return AlertDialog(
           title: const Text('Add a new task'),
           content: TextField(
-            controller: _textFieldController,
+            controller: _taskController,
             decoration: const InputDecoration(hintText: 'Enter task here'),
             autofocus: true,
           ),
@@ -95,14 +95,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('CANCEL'),
               onPressed: () {
                 Navigator.of(context).pop();
-                _textFieldController.clear();
+                _taskController.clear();
               },
             ),
             TextButton(
               child: const Text('ADD'),
               onPressed: () {
                 Navigator.of(context).pop();
-                _addTodoItem(_textFieldController.text);
+                _addTodoItem(_taskController.text);
               },
             ),
           ],
@@ -111,44 +111,85 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('To-Do List')),
-      body: _todoItems.isEmpty
-          ? const Center(child: Text('No tasks add yet.. '))
-          : ListView.builder(
-        itemCount: _todoItems.length,
-        itemBuilder: (context, index) {
-          final item = _todoItems[index];
-          return ListTile(
-            leading: Checkbox(
-              value: item.isCompleted,
-              onChanged: (bool? value) => _toggleTodoItem(index),
-            ),
-            title: Text(
-              item.title,
-              style: TextStyle(
-                decoration: item.isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-                color: item.isCompleted ? Colors.grey : Colors.black,
-              ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _deleteTodoItem(index),
-            ),
-          );
-        },
+      appBar: AppBar(
+        title: const Text(
+          'To-Do List',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.blueAccent,
+        elevation: 4,
       ),
+      body: _todoItems.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No tasks yet!',
+                    style: TextStyle(fontSize: 20, color: Colors.black54),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap the + button to add your first task',
+                    style: TextStyle(color: Colors.black38),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _todoItems.length,
+              itemBuilder: (context, index) {
+                final item = _todoItems[index];
+                return Card(
+                  elevation: 0.4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    leading: Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        activeColor: Colors.blueAccent,
+                        value: item.isCompleted,
+                        onChanged: (bool? value) => _toggleTodoItem(index),
+                      ),
+                    ),
+                    title: Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        decoration: item.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        color: item.isCompleted ? Colors.grey : Colors.black87,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.redAccent),
+                      onPressed: () => _deleteTodoItem(index),
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blueAccent,
+        elevation: 5,
         onPressed: _displayDialog,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
 }
-
